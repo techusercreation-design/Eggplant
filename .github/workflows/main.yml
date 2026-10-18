@@ -24,15 +24,31 @@ jobs:
       with:
         gradle-version: '8.2'
 
-    - name: Make Gradle Wrapper Executable
+    - name: Auto-Find Project and Build APK
       run: |
-        if [ -f "gradlew" ]; then
-          chmod +x gradlew
+        # အကယ်၍ ZIP ဖိုင်တင်မိထားပါက အလိုအလျောက် ဖြည်ပေးရန်
+        for z in *.zip; do
+          if [ -f "$z" ]; then
+            unzip -o "$z"
+          fi
+        done
+
+        # settings.gradle သို့မဟုတ် settings.gradle.kts ရှိသော ဖိုဒါကို အလိုအလျောက် ရှာဖွေခြင်း
+        SETTINGS_FILE=$(find . -name "settings.gradle*" | head -n 1)
+        
+        if [ -z "$SETTINGS_FILE" ]; then
+          echo "Error: Gradle build files not found in the repository!"
+          ls -R
+          exit 1
         fi
 
-    - name: Build Debug APK
-      run: |
+        PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+        echo "Found Gradle project at: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
+
+        # gradlew ရှိမရှိ စစ်ဆေးပြီး Build လုပ်ရန်
         if [ -f "gradlew" ]; then
+          chmod +x gradlew
           ./gradlew assembleDebug
         else
           gradle assembleDebug
